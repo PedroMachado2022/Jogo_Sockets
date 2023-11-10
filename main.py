@@ -1,8 +1,12 @@
 import pygame
 import sys
-
+import servidor.scTCP as tcp
+import threading
 pygame.init()
 
+#variaveis game
+
+players = [1,2]
 
 # Cores
 WHITE = (255, 255, 255)
@@ -34,26 +38,68 @@ find_rect = find_button.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 +
 
 # Quadrado central 
 
-center_square = pygame.Surface((600, 350), pygame.SRCALPHA)
+center_square = pygame.Surface((600, 400), pygame.SRCALPHA)
 center_square.fill(BLACK_transparent)
 
+#texto do numero da sala
 
+Number_room = font.render("Codigo sala:", True, BLACK)
+Number_room_r = Number_room.get_rect(center=(SCREEN_WIDTH // 2, 120))
+
+#texto de volta
+exit = font.render("Sair", True, BLACK)
+exit_r = exit.get_rect(center=((SCREEN_WIDTH // 2)-220, 120))
+
+#texto de start
+Start = font.render("Start", True, BLACK)
+Start_r = Start.get_rect(center=((SCREEN_WIDTH // 2), 400))
+
+# pecas grafica
+
+player1 = pygame.image.load("imgs/player1.png")
+player2 = pygame.image.load("imgs/player2.PNG")
+player3 = pygame.image.load("imgs/player1.PNG")
+player4 = pygame.image.load("imgs/player2.PNG")
+
+# Tiulo do jogo
 pygame.display.set_caption("Ludo")
 
+#inicar
+
+
+Iniciar_conexao = threading.Thread(target=tcp.main, args=())
+Iniciar_conexao.start()
+
+
+# Controle de pagina
 page = 0
 
 running = True
 while running:
+   
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if create_rect.collidepoint(event.pos) & page == 0:
+
+            if create_rect.collidepoint(event.pos) and page == 0:
                 # Lógica para criar uma partida
                 page = 1
+                number = tcp.Criar_sala(tcp.sock)
                 print("Criar uma partida")
-            elif find_rect.collidepoint(event.pos):
-                # Lógica para encontrar uma partida
+
+            elif exit_r.collidepoint(event.pos) and page != 0:
+                page = 0
+                print('sair')
+
+            elif Start_r.collidepoint(event.pos) and page == 1:
+                page = 0
+                print('Start')
+            elif find_rect.collidepoint(event.pos) and page == 0:
+                page = 3
+
+            elif Start_r.collidepoint(event.pos) and page == 3:
+                page = 3
                 print("Encontrar uma partida")
 
     if page == 0:
@@ -66,9 +112,26 @@ while running:
         screen.blit(find_button, find_rect)
 
     if page == 1:
-
+        #tcp.Atualizar(tcp.sock)
         screen.blit(background, (0,0))
         screen.blit(center_square, (100,100))
+        screen.blit(Number_room, Number_room_r)
+        screen.blit(exit,exit_r)
+        screen.blit(Start,Start_r)
+        
+        const = 220
+        for i in players:
+            screen.blit(pygame.image.load("imgs/player"+str(i)+".png"), (const, 250))
+            const+=100
+
+    if page == 3:
+        screen.blit(background, (0,0))
+        screen.blit(center_square, (100,100))
+        screen.blit(font.render("Encontre", True, BLACK), (SCREEN_WIDTH // 2-100, 110))
+        screen.blit(exit,exit_r)
+        screen.blit(font.render("Find", True, BLACK),Start_r)
+
+
     pygame.display.flip()
 
 pygame.quit()

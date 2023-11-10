@@ -52,6 +52,9 @@ def handle_client(conn, addr):
             conn.sendall(str(partida.cod_partida).encode())
             salas.append(partida)
         
+        elif client_message[0] == 'Number_players':
+            conn.sendall(str(partida.players).encode())
+
         elif client_message[0] == 'Find_room':
 
             sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
