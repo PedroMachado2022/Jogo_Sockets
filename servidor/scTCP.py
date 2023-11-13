@@ -1,50 +1,39 @@
 import socket
-import threading
 
-HOST = "127.0.0.1"
-PORT = 65432
+class ClienteTCP:
+    def __init__(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.players = []
 
-sock = None
-players = []
-
-def receive_messages(sock):
-    while True:
-        data = sock.recv(1024)
-        if not data:
-            break
-        print(f"Received from server: {data.decode()}")
-
-def send_messages(sock):
-    while True:
-        message = input("Enter a message: ")
-        sock.sendall(message.encode())
-
-def Atualizar(sock):
-    message = 'Number_players'
-    sock.sendall(message.encode())
-
-    data = sock.recv(1024)
-    print(f"Received from server: {data.decode()}")
-    return data.decode()
-
-def Criar_sala(sock):
-    message = 'Create_room'
-    sock.sendall(message.encode())
-
-    data = sock.recv(1024)
-    return data.decode()
-
-def main():
-    global sock
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        sock = s
-        # O cliente escolhe ou recebe um código de sala
-        codigo_sala = input("Enter the room code: ")
-        s.sendall(codigo_sala.encode())
 
         
+    def conectar(self, host, port):
+        self.sock.connect((host, port))
 
+    def receber_mensagens(self):
+        while True:
+            data = self.sock.recv(1024)
+            if not data:
+                break
+            print(f"Recebido do servidor: {data.decode()}")
 
-if __name__ == "__main__":
-        main()
+    def enviar_mensagem(self, msg):
+        try:
+            self.sock.sendall(msg.encode())
+        except Exception as e:
+            print(f"Erro ao enviar mensagem: {e}")
+
+    def atualizar(self):
+        message = 'Number_players'
+        self.enviar_mensagem(message)
+
+        data = self.sock.recv(1024)
+        print(f"Recebido do servidor: {data.decode()}")
+        return data.decode()
+
+    def criar_sala(self):
+        message = 'Create_room'
+        self.enviar_mensagem(message)
+
+        data = self.sock.recv(1024)
+        return data.decode()

@@ -2,7 +2,16 @@ import pygame
 import sys
 import servidor.scTCP as tcp
 import threading
+import socket
+
 pygame.init()
+
+#variaveis server
+Conexao_Tcp = tcp.ClienteTCP()
+HOST = "127.0.0.1"
+PORT = 65432
+
+
 
 #variaveis game
 
@@ -64,11 +73,9 @@ player4 = pygame.image.load("imgs/player2.PNG")
 # Tiulo do jogo
 pygame.display.set_caption("Ludo")
 
-#inicar
+#inicar servidor
 
-
-Iniciar_conexao = threading.Thread(target=tcp.main, args=())
-Iniciar_conexao.start()
+Conexao_Tcp.conectar(HOST, PORT)
 
 
 # Controle de pagina
@@ -76,28 +83,28 @@ page = 0
 
 running = True
 while running:
-   
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-
             if create_rect.collidepoint(event.pos) and page == 0:
-                # Lógica para criar uma partida
                 page = 1
-                number = tcp.Criar_sala(tcp.sock)
-                print("Criar uma partida")
-
+                Conexao_Tcp.enviar_mensagem("Create_room")
+                print('Sala Criada')
+                # code = int(tcp.receive_message())
+                # print("Criar uma sala, Código:", code)
             elif exit_r.collidepoint(event.pos) and page != 0:
                 page = 0
+                tcp.send_message("Leave_room")
                 print('sair')
-
             elif Start_r.collidepoint(event.pos) and page == 1:
                 page = 0
                 print('Start')
             elif find_rect.collidepoint(event.pos) and page == 0:
                 page = 3
-
+                tcp.send_message("Find_room")
+                response = tcp.receive_message()
+                print("Resposta do servidor:", response)
             elif Start_r.collidepoint(event.pos) and page == 3:
                 page = 3
                 print("Encontrar uma partida")

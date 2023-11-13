@@ -6,110 +6,92 @@ HOST = "127.0.0.1"
 PORT = 65432
 
 salas = []
+lock = threading.Lock()
 
-# Controle da sala
 class Sala:
     def __init__(self, master_player):
         self.players = [master_player]
         self.cod_partida = None
 
-    def create_code(self):
+    def criar_codigo(self):
         self.cod_partida = random.randint(100000, 999999)
 
-    def add_player(self, player):
-        self.players.append(player)
+    def adicionar_jogador(self, jogador):
+        self.players.append(jogador)
 
-    def remove_player(self, player):
-        self.players.remove(player)
+    def remover_jogador(self, jogador):
+        self.players.remove(jogador)
 
-    def broadcast_message(self, message, sender):
+    def enviar_mensagem_broadcast(self, mensagem, remetente):
         for player in self.players:
-            if player != sender:
+            if player != remetente:
                 try:
-                    player.sendall(message.encode())
+                    player.sendall(mensagem.encode())
                 except Exception as e:
                     print(f'Erro ao enviar mensagem para {player}: {e}')
 
-                
-
-
-
-# Conexão com o cliente
 def handle_client(conn, addr):
-    print(f"Connected by {addr}")
-    
-    while True:
-        
-        
-        # Receber código da sala do cliente
-        client_message = conn.recv(1024).decode().split(" ")
+    print(f"Conectado por {addr}")
+    sala_associada = None
 
-        print(client_message)
+    try:
+        while True:
+            client_message = conn.recv(1024).decode().split(" ")
 
-        if client_message[0] == 'Create_room':
-            partida = Sala(conn)
-            partida.create_code()
-            conn.sendall(str(partida.cod_partida).encode())
-            salas.append(partida)
-        
-        elif client_message[0] == 'Number_players':
-            conn.sendall(str(partida.players).encode())
+            if not client_message:
+                break
 
-        elif client_message[0] == 'Find_room':
+            if client_message[0] == 'Create_room':
+                print(f"Cliente: {addr} -- abriu conexao com sala")
+                sala_associada = Sala(conn)
+                sala_associada.criar_codigo()
+                conn.sendall(str(sala_associada.cod_partida).encode())
+                salas.append(sala_associada)
 
-            sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
+            elif client_message[0] == 'Number_players':
+                conn.sendall(str(sala_associada.players).encode())
 
-            if sala_existente:
-                sala_existente.add_player(conn)
-                print(f"{addr} entrou na sala {sala_existente.cod_partida}")
+            elif client_message[0] == 'Find_room':
+                sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
+                if sala_existente:
+                    sala_existente.adicionar_jogador(conn)
+                    print(f"{addr} entrou na sala {sala_existente.cod_partida}")
+                    players_na_sala = len(sala_existente.players)
+                    conn.sendall(f'players {players_na_sala}'.encode())
+                    mensagem = f"Jogador {addr} entrou na sala {sala_existente.cod_partida}"
+                    sala_existente.enviar_mensagem_broadcast(mensagem, addr)
 
-                # Voltar quantos players estão na sala
-                players_na_sala = len(sala_existente.players)
-                conn.sendall(f'players {players_na_sala}'.encode())
+            elif client_message[0] == ('Leave_room'):
+                if sala_associada:
+                    if conn in sala_associada.players:
+                        sala_associada.remover_jogador(conn)
+                        mensagem = f"Jogador {addr} saiu da sala {sala_associada.cod_partida}"
+                        sala_associada.enviar_mensagem_broadcast(mensagem, addr)
+                        if not sala_associada.players:
+                            salas.remove(sala_associada)
+                            sala_associada = None
 
-                # Envia mensagem para todos os jogadores na sala informando sobre o novo jogador
-                message = f"Jogador {addr} entrou na sala {sala_existente.cod_partida}"
-                sala_existente.broadcast_message(message, addr)
+            elif client_message[0] == ('P'):
+                sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
+                print(sala_existente.players)
 
-        elif client_message[0] == ('Leave_room'):
+    except Exception as e:
+        print(f"Erro durante a comunicação com {addr}: {e}")
+    finally:
+        print(f"Conexão encerrada por {addr}")
+        conn.close()
 
-            sala_associada = next((sala for sala in salas if conn in sala.players), None)
-
-            if sala_associada:
-                if conn in sala_associada.players:
-                    sala_associada.players.remove(conn)
-
-                    # Envia mensagem para todos os jogadores na sala informando sobre a saida do novo jogador
-                    message = f"Jogador {addr} saiu da sala {sala_associada.cod_partida}"
-                    sala_associada.broadcast_message(message, addr)
-                    break
-
-                else:
-                    print(f"Erro: Jogador {addr} não está na sala {sala_associada.cod_partida}")
-        
-        elif client_message[0] == ('P'):
-            sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
-            print(sala_existente.players)
-
-        conn.sendall(str().encode())
-
-    print(f"Connection closed by {addr}")
-    conn.close()
-
-
-
-
-# Servidor
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
         s.listen()
 
+        print(f"Servidor ouvindo em {HOST}:{PORT}")
+
         while True:
             conn, addr = s.accept()
             client_thread = threading.Thread(target=handle_client, args=(conn, addr))
             client_thread.start()
-
 
 if __name__ == "__main__":
     main()
