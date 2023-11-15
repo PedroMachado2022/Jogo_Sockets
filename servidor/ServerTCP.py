@@ -55,17 +55,16 @@ def handle_client(conn, addr):
                 sala_associada =  Sala(conn)
                 sala_associada.criar_codigo()
 
-                #mensagem do numero para para o client
-                msg = 'ReturnSala '+str(str(sala_associada.cod_partida))
-                conn.sendall(msg.encode())
-
                 #Controle para saber se sala existe.
                 salas.append(sala_associada)
 
 
-            elif client_message[0] == 'Players':
+            elif client_message[0] == 'Atualizar':
                 #atualizar dados de sala
-                conn.sendall(f'Players {len(sala_associada.players)}'.encode())
+                if sala_associada:
+                    conn.sendall(f'Players {len(sala_associada.players)} {sala_associada.cod_partida}'.encode())
+                else:
+                    conn.sendall(f'Players 0'.encode())
 
 
             elif client_message[0] == 'Find_room':
@@ -76,9 +75,9 @@ def handle_client(conn, addr):
                 if sala_associada:
                     sala_associada.adicionar_jogador(conn)
                     players_na_sala = len(sala_associada.players)
-                    msg = f'Players {players_na_sala}'
+                    msg = f'Players {players_na_sala} {sala_associada.cod_partida}'
                     conn.sendall(msg.encode())
-                    conn.sendall(f'ReturnSala {sala_associada.cod_partida}'.encode())
+                    
                     sala_associada.enviar_mensagem_broadcast(msg, conn)
                     
 
@@ -92,17 +91,13 @@ def handle_client(conn, addr):
                         sala_associada.remover_jogador(conn)
                         mensagem = f"Player_saiu {sala_associada.cod_partida}"
 
-                        sala_associada.enviar_mensagem_broadcast(mensagem, addr)
-                        #Verifica se tem alguem na sala ainda, se não existe retira sala.
+                        sala_associada.enviar_mensagem_broadcast(mensagem, conn)
+                        #Verifica se tem alguem na sala ainda, se não existe apaga sala.
                         if not sala_associada.players:
                             print(f'sala removida: {sala_associada.cod_partida}')
                             salas.remove(sala_associada)
                             sala_associada = None
 
-
-            elif client_message[0] == ('P'):
-                sala_existente = next((sala for sala in salas if sala.cod_partida == int(client_message[1])), None)
-                print(sala_existente.players)
 
 
     except Exception as e:

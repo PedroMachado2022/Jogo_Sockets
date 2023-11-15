@@ -27,13 +27,13 @@ class ClienteTCP:
 
 
     def atualizar(self):
-        message = 'Players'
+        message = 'Atualizar '
         self.enviar_mensagem(message)
-
-
-    def criar_sala(self):
-        message = 'Create_room'
+    
+    def sair(self):
+        message = 'Leave_room '
         self.enviar_mensagem(message)
+        self.sala = None
 
     
     def Encontrar_sala(self, sala):
@@ -53,11 +53,10 @@ class ClienteTCP:
             # Estrutura da mensagem funçao/dados de return/plus
             if mensagem:
                 mensagem = mensagem.split(' ')
-                if mensagem[0] == "ReturnSala":
-                    self.sala = mensagem[1]
-
-                elif mensagem[0] == "Players":
-                    self.players = mensagem[1]
+                
+                if mensagem[0] == "Players":
+                    self.players = int(mensagem[1])
+                    self.sala = int(mensagem[2])
 
                 elif mensagem[0] == "Player_saiu":
                     self.atualizar()
