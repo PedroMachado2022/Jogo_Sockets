@@ -12,15 +12,73 @@ unidade_mapa = 33.4
 # Variaveis de jogo
 x = 67
 y = 67
+matriz_jogo = [
+    [1, 1, 1, 1, 1, 1, 7, 7, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 3, 9, 1, 1, 1, 1, 1, 1],
+    [7, 7, 7, 7, 7, 8, 1, 1, 1, 7, 7, 7, 7, 7, 3],
+    [5, 7, 7, 7, 7, 7, 1, 1, 1, 0, 0, 0, 0, 0, 3],
+    [5, 0, 0, 0, 0, 0, 1, 1, 1, 2, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 6, 5, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 5, 0, 0, 1, 1, 1, 1, 1, 1]]
 
 peca_player = [[[1.5, 2.5],[2.5, 1.5],[3.5, 2.5],[2.5, 3.5]], 
                [[10.5, 2.5],[11.5, 1.5],[12.5, 2.5],[11.5, 3.5]], 
                [[1.5, 11.5],[2.5, 10.5],[3.5, 11.5],[2.5, 12.5]], 
                [[10.5, 11.5],[11.5, 10.5],[12.5, 11.5],[11.5, 12.5]]]
 
-pos_incial = [(1, 6), (8, 1), (6, 13), (13,8)]
 
+pos_incial = [[1, 6], [8, 1], [6, 13], [13,8]]
 
+def regra(pos, cont):
+    num = matriz_jogo[pos[1]][pos[0]]
+    #1 - ignora
+    
+    #0 - 1 + esquerda || andou 51 blocos + 1 cima
+    if num == 0:
+        if cont == 51:
+            pos = [pos[0],pos[1]-1] 
+        else:    
+            pos = [pos[0]-1,pos[1]] 
+    #3 - 1 + baixo || andou 51 blocos + 1 esquerda
+    elif num == 3:
+        if cont == 51:
+            pos = [pos[0]-1,pos[1]] 
+        else:
+            pos = [pos[0],pos[1]+1] 
+    #5 - 1 + cima || andou 51 blocos + 1 direita
+    elif num == 5:
+        if cont == 51:
+            pos = [pos[0]+1,pos[1]] 
+        else:
+            pos = [pos[0],pos[1]-1] 
+    #7 - 1 + direita || andou 51 blocos + 1 baixo
+    elif num == 7:
+        if cont == 51:
+            pos = [pos[0],pos[1]+1]
+        else:
+            pos = [pos[0]+1,pos[1]] 
+    #2 - 1 + esqueda  + baixo
+    elif num == 2:
+        pos = [pos[0]-1,pos[1]+1] 
+    #6 - 1 + cima  + esquerda
+    elif num == 6:
+        pos = [pos[0]-1,pos[1]-1] 
+    #8 - 1 + direita + cima
+    elif num == 8:
+        pos = [pos[0]+1,pos[1]-1] 
+    #9 - 1 + baixo + direita
+    elif num == 9:
+        pos = [pos[0]+1,pos[1]+1] 
+    print('debug: ', pos)
+    return pos
 
 # Controle de peças
 class Peca:
@@ -36,8 +94,14 @@ class Peca:
         pygame.draw.circle(screen, self.jogador['cor'], ((unidade_mapa * self.posicao[0]) + x,  (unidade_mapa * self.posicao[1]) + y), 15)
     
     def Andar(self, dado):
+        
         print('debug: peça andou ', dado)
-        pass
+        if self.preso == False:
+            
+            # ---- Verificar contador**
+            for i in range(dado):
+                self.contador_geral += 1
+                self.posicao = regra(self.posicao, self.contador_geral)
 
 
 # Controle de jogo
@@ -67,7 +131,7 @@ class Jogo:
             i.Desenhar_peca()
     
     def Dado(self):
-        self.dado = random.randint(1, 6)
+        self.dado = random.randint(5, 6)
 
     def proximo_turno(self):
         print("Debug: Next_Turno", self.turno)
@@ -119,7 +183,7 @@ while True:
             # Se o clique do mouse estiver dentro da área do quadrado do dado
             if dado_rect.collidepoint(mouse_x, mouse_y):
                 if jogo.dado == 0 and jogo.jogou == False:
-                    jogo.dado = random.randint(1, 6)
+                    jogo.Dado()
                     for i in jogo.pecas:
                         if i.jogador == jogo.players[jogo.turno]:
                             if i.preso == False or jogo.dado == 6:
