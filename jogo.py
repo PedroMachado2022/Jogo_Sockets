@@ -10,6 +10,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 unidade_mapa = 33.4
 
 # Variaveis de jogo
+font = pygame.font.Font('./font/04b.ttf', 28)
 x = 67
 y = 67
 matriz_jogo = [
@@ -19,9 +20,9 @@ matriz_jogo = [
     [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 5, 3, 3, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 5, 3, 9, 1, 1, 1, 1, 1, 1],
-    [7, 7, 7, 7, 7, 8, 1, 1, 1, 7, 7, 7, 7, 7, 3],
-    [5, 7, 7, 7, 7, 7, 1, 1, 1, 0, 0, 0, 0, 0, 3],
-    [5, 0, 0, 0, 0, 0, 1, 1, 1, 2, 0, 0, 0, 0, 0],
+    [7, 7, 7, 7, 7, 8, 1, 4, 1, 7, 7, 7, 7, 7, 3],
+    [5, 7, 7, 7, 7, 7, 4, 1, 4, 0, 0, 0, 0, 0, 3],
+    [5, 0, 0, 0, 0, 0, 1, 4, 1, 2, 0, 0, 0, 0, 0],
     [1, 1, 1, 1, 1, 1, 6, 5, 3, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 5, 5, 3, 1, 1, 1, 1, 1, 1],
@@ -77,13 +78,16 @@ def regra(pos, cont):
     #9 - 1 + baixo + direita
     elif num == 9:
         pos = [pos[0]+1,pos[1]+1] 
-    print('debug: ', pos)
+    elif num == 4:
+        pos = 'ganhou'
+    
     return pos
 
 # Controle de peças
 class Peca:
     def __init__(self, jogador, posicao, posicao_inicial):
         self.jogador = jogador
+        self.posicao_base = posicao
         self.posicao = posicao
         self.preso = True 
         self.contador_geral = 0
@@ -92,36 +96,48 @@ class Peca:
     def Desenhar_peca(self):
         #print()
         pygame.draw.circle(screen, self.jogador['cor'], ((unidade_mapa * self.posicao[0]) + x,  (unidade_mapa * self.posicao[1]) + y), 15)
-    
-    def Andar(self, dado):
-        
-        print('debug: peça andou ', dado)
-        if self.preso == False:
-            
-            # ---- Verificar contador**
-            for i in range(dado):
-                self.contador_geral += 1
-                self.posicao = regra(self.posicao, self.contador_geral)
 
+    def morre(self):
+        print('debug: morreu ', self.posicao)
+        self.posicao = self.posicao_base
+        self.preso = True
+
+
+        
+    def Andar(self, dado, pecas):
+        
+            if self.preso == False:
+                
+                # ---- Verificar contador**
+                for i in range(dado):
+                    self.contador_geral += 1
+                    self.posicao = regra(self.posicao, self.contador_geral)
+                    if self.posicao == 'ganhou':
+                        pecas.remove(self)
+                        break
+
+                for i in pecas:
+                    if i.jogador != self.jogador:
+
+                        if i.posicao == self.posicao:
+                            i.morre()
 
 # Controle de jogo
 class Jogo:
     def __init__(self):
 
         self.players = [
-            {'id': 1, 'cor': (100, 200, 100)}, 
-            {'id': 2, 'cor': (255, 200, 200)}, 
-            {'id': 3, 'cor': (200, 200, 100)}, 
-            {'id': 4, 'cor': (200, 100, 255)}]
+            {'id': 1, 'cor': (100, 200, 100)}]
         
         self.pecas = []
         self.turno = 0
         self.dado = 0
         self.jogou = False
+        self.ganhou = -1
 
     def iniciar(self):
         for i in range(len(self.players)):
-            for z in range(0,4):
+            for z in range(0,1):
                 nova_peca = Peca(self.players[i], peca_player[i][z], pos_incial[i])
                 self.pecas.append(nova_peca)
     
@@ -131,9 +147,22 @@ class Jogo:
             i.Desenhar_peca()
     
     def Dado(self):
-        self.dado = random.randint(5, 6)
+        self.dado = 6 #random.randint(, 6)
+
+    def verificapeca(self):
+        
+        for i in self.players:
+            ganhou = 0
+            for z in self.pecas:
+                if i == z.jogador:
+                    ganhou = 1
+            if ganhou == 0:
+                self.ganhou = i
+
+        print(self.ganhou)
 
     def proximo_turno(self):
+        self.verificapeca()
         print("Debug: Next_Turno", self.turno)
         self.jogou = False
         self.dado = 0
@@ -144,8 +173,6 @@ class Jogo:
 
         
 
-
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Ludo')
 
@@ -155,6 +182,7 @@ mapa = pygame.image.load("imgs/mapa.PNG")
 #dado
 dado_size = 50
 dado_rect = pygame.Rect(SCREEN_WIDTH - dado_size - 20, SCREEN_HEIGHT // 2 - dado_size // 2, dado_size, dado_size)
+
 
 
 # Defina as cores
@@ -177,6 +205,7 @@ while True:
             pygame.quit()
             sys.exit()
         
+        #---------------------Evento de click no dado---------------
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Botão esquerdo do mouse
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -212,8 +241,9 @@ while True:
                                     peca.preso = False
                                     #sistema de troca de turno
                                     jogo.proximo_turno()
+
                                 elif peca.preso == False:
-                                    peca.Andar(jogo.dado)
+                                    peca.Andar(jogo.dado, jogo.pecas)
                                     #sistema de troca de turno
                                     jogo.proximo_turno()
 
@@ -222,9 +252,18 @@ while True:
     screen.fill(DARK_GRAY)
     screen.blit(mapa, (50, 50))
 
+    #Referencia da vez de quem joga
+    
+
+    if jogo.ganhou != -1:
+        screen.blit(font.render('Player '+str(jogo.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
+    else:
+        screen.blit(font.render('Player '+str(jogo.turno+1), True, branco), (220, 15))
     #dado
     pygame.draw.rect(screen, branco, dado_rect)
     pygame.draw.rect(screen, preto, dado_rect, 2) 
+    
+   
 
     # Desenha as peças
     jogo.Desenhar()
