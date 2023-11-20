@@ -10,6 +10,16 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 unidade_mapa = 33.4
 
 # Variaveis de jogo
+
+
+player1 = pygame.image.load("imgs/player1.png")
+player2 = pygame.image.load("imgs/player2.PNG")
+player3 = pygame.image.load("imgs/player3.PNG")
+player4 = pygame.image.load("imgs/player4.PNG")
+
+dado_image = pygame.image.load("imgs/player4.PNG")
+
+
 font = pygame.font.Font('./font/04b.ttf', 28)
 x = 67
 y = 67
@@ -85,17 +95,34 @@ def regra(pos, cont):
 
 # Controle de peças
 class Peca:
-    def __init__(self, jogador, posicao, posicao_inicial):
+    def __init__(self, jogador, posicao, posicao_inicial, imagem):
         self.jogador = jogador
         self.posicao_base = posicao
         self.posicao = posicao
         self.preso = True 
         self.contador_geral = 0
         self.posicao_inicial = posicao_inicial
+        self.imagem = imagem
     
     def Desenhar_peca(self):
-        #print()
-        pygame.draw.circle(screen, self.jogador['cor'], ((unidade_mapa * self.posicao[0]) + x,  (unidade_mapa * self.posicao[1]) + y), 15)
+    # Desenha as peças de cada jogador
+        jogador_cor = self.jogador['cor']
+        jogador_imagem = None
+
+        if jogador_cor == 'verde':
+            jogador_imagem = player3
+        elif jogador_cor == 'vermelho':
+            jogador_imagem = player2
+        elif jogador_cor == 'amarelo':
+            jogador_imagem = player4
+        elif jogador_cor == 'azul':
+            jogador_imagem = player1
+
+        # Desenhar a imagem do jogador na tela
+        if jogador_imagem:
+            jogador_rect = jogador_imagem.get_rect()
+            jogador_rect.center = ((unidade_mapa * self.posicao[0]) + x, (unidade_mapa * self.posicao[1]) + y)
+            screen.blit(jogador_imagem, jogador_rect)
 
     def morre(self):
         print('debug: morreu ', self.posicao)
@@ -127,7 +154,11 @@ class Jogo:
     def __init__(self):
 
         self.players = [
-            {'id': 1, 'cor': (100, 200, 100)}]
+            {'id': 1, 'cor': 'verde'},
+            {'id': 2, 'cor': 'vermelho'},
+            {'id': 3, 'cor': 'amarelo'},
+            {'id': 4, 'cor': 'azul'}
+            ]
         
         self.pecas = []
         self.turno = 0
@@ -137,17 +168,33 @@ class Jogo:
 
     def iniciar(self):
         for i in range(len(self.players)):
-            for z in range(0,1):
-                nova_peca = Peca(self.players[i], peca_player[i][z], pos_incial[i])
+            for z in range(0, 4):
+                nova_peca = Peca(self.players[i], peca_player[i][z], pos_incial[i], player1)
                 self.pecas.append(nova_peca)
-    
 
+    
     def Desenhar(self):
         for i in self.pecas:
             i.Desenhar_peca()
     
     def Dado(self):
-        self.dado = 6 #random.randint(, 6)
+        show_image = None
+        self.dado = 1 #random.randint(, 6)
+            
+    def Imagem_Dado(self):
+        show_image = None
+        if self.dado == 1:
+            show_image = dado_image
+        elif self.dado == 2:
+            pass
+        elif self.dado == 3:
+            pass
+        elif self.dado == 4:
+            pass
+        elif self.dado == 5:
+            pass
+        else:
+            pass
 
     def verificapeca(self):
         
@@ -198,6 +245,10 @@ jogo = Jogo()
 
 jogo.iniciar()
 
+mouse_click_position = None
+
+dado_pos = (0,0)
+
 # Loop principal
 while True:
     for evento in pygame.event.get():
@@ -205,19 +256,22 @@ while True:
             pygame.quit()
             sys.exit()
         
-        #---------------------Evento de click no dado---------------
+        # ---------------------Evento de click no dado---------------
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Botão esquerdo do mouse
-            mouse_x, mouse_y = pygame.mouse.get_pos()
+            mouse_click_position = pygame.mouse.get_pos()
 
             # Se o clique do mouse estiver dentro da área do quadrado do dado
-            if dado_rect.collidepoint(mouse_x, mouse_y):
+            if dado_rect.collidepoint(mouse_click_position):
+                if mouse_click_position:
+                    dado_pos = mouse_click_position
                 if jogo.dado == 0 and jogo.jogou == False:
                     jogo.Dado()
+                    jogo.Imagem_Dado()
                     for i in jogo.pecas:
                         if i.jogador == jogo.players[jogo.turno]:
                             if i.preso == False or jogo.dado == 6:
                                 jogo.jogou = True
-                    print('Debug: dado', jogo.dado)           
+                    print('Debug: dado', jogo.dado)
                     if jogo.jogou == False:
                         jogo.proximo_turno()
 
@@ -252,7 +306,9 @@ while True:
     screen.fill(DARK_GRAY)
     screen.blit(mapa, (50, 50))
 
-    #Referencia da vez de quem joga
+    # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
+    if dado_pos != (0, 0):
+        screen.blit(dado_image, dado_pos)
     
 
     if jogo.ganhou != -1:
