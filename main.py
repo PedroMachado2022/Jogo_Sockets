@@ -5,6 +5,9 @@ import threading
 from time import sleep
 pygame.init()
 
+
+from jogo import *
+
 #variaveis server
 Conexao_Tcp = tcp.ClienteTCP()
 HOST = "127.0.0.1"
@@ -87,7 +90,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN :
 
             #Criar Partida
             if create_rect.collidepoint(event.pos) and page == 0:
@@ -106,8 +109,10 @@ while running:
 
             #Começar Jogo
             elif Start_r.collidepoint(event.pos) and page == 1:
-                page = 0
-                print('Start')
+                jogo_objeto = Jogo()
+                jogo_objeto.iniciar()
+                page = 4
+                print(f'Start{page}')
 
             
             elif find_rect.collidepoint(event.pos) and page == 0:
@@ -123,7 +128,49 @@ while running:
                     page = 0
                 else:
                     page = 1                    
+            elif page == 4 and event.button == 1:
+                mouse_click_position = pygame.mouse.get_pos()
+                # Se o clique do mouse estiver dentro da área do quadrado do dado
+                if dado_rect.collidepoint(mouse_click_position):
+                    if mouse_click_position:
+                        dado_pos = mouse_click_position
+                    if jogo_objeto.dado == 0 and jogo_objeto.jogou == False:
+                        jogo_objeto.Dado()
+                        jogo_objeto.Imagem_Dado()
+                        for i in jogo_objeto.pecas:
+                            if i.jogador == jogo_objeto.players[jogo_objeto.turno]:
+                                if i.preso == False or jogo_objeto.dado == 6:
+                                    jogo_objeto.jogou = True
+                        print('Debug: dado', jogo_objeto.dado)
+                        if jogo_objeto.jogou == False:
+                            jogo_objeto.proximo_turno()
+
+
+                #----------------------Evento de click nas pecas----------- 
+                if jogo_objeto.jogou == True: #verificar se o player jogou o dado
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  
+                            mouse_x, mouse_y = pygame.mouse.get_pos()
                 
+                            # Verifica se o clique ocorreu em uma peça
+                            for peca in jogo_objeto.pecas:
+                                peca_x = (unidade_mapa * peca.posicao[0]) + x
+                                peca_y = (unidade_mapa * peca.posicao[1]) + y
+
+                                # Se o clique do mouse estiver dentro da área da peça
+                                if peca_x - 15 <= mouse_x <= peca_x + 15 and peca_y - 15 <= mouse_y <= peca_y + 15:
+
+                                    if jogo_objeto.players[jogo_objeto.turno] == peca.jogador: #Vez do player
+                                        if peca.preso == True and jogo_objeto.dado == 6: #liberar peça
+                                            peca.posicao = peca.posicao_inicial
+                                            peca.preso = False
+                                            #sistema de troca de turno
+                                            jogo_objeto.proximo_turno()
+
+                                        elif peca.preso == False:
+                                            peca.Andar(jogo_objeto.dado, jogo_objeto.pecas)
+                                            #sistema de troca de turno
+                                            jogo_objeto.proximo_turno()
+
         #Escrever em pagina de busca
         elif event.type == pygame.KEYDOWN and page == 3:
             if event.key == pygame.K_RETURN:
@@ -133,7 +180,10 @@ while running:
                 user_text = user_text[:-1]  
             elif event.unicode.isnumeric():  
                 user_text += event.unicode
+        
+        # Funções de jogo
 
+        
 
     if page == 0:
         # Desenhar a imagem de fundo
@@ -168,8 +218,29 @@ while running:
 
         screen.blit(exit, exit_r)
         screen.blit(font.render("Find", True, BLACK), Start_r)
+    
+    elif page == 4:
+        screen.fill(DARK_GRAY)
+        screen.blit(mapa, (50, 50))
+        
 
+        # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
+        if dado_pos != (0, 0):
+            screen.blit(dado_image, dado_pos)
+        
+        if jogo_objeto.ganhou != -1:
+            screen.blit(font.render('Player '+str(jogo_objeto.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
+        else:
+            screen.blit(font.render('Player '+str(jogo_objeto.turno+1), True, branco), (220, 15))
+        #dado
+        pygame.draw.rect(screen, branco, dado_rect)
+        pygame.draw.rect(screen, preto, dado_rect, 2) 
+        
+    
 
+        # Desenha as peças
+        jogo_objeto.Desenhar()
+        # Atualiza a tela
 
     pygame.display.flip()
 

@@ -12,10 +12,10 @@ unidade_mapa = 33.4
 # Variaveis de jogo
 
 
-player1 = pygame.image.load("imgs/player1.png")
-player2 = pygame.image.load("imgs/player2.PNG")
-player3 = pygame.image.load("imgs/player3.PNG")
-player4 = pygame.image.load("imgs/player4.PNG")
+player1 = pygame.image.load("imgs/player1j.png")
+player2 = pygame.image.load("imgs/player2j.PNG")
+player3 = pygame.image.load("imgs/player3j.PNG")
+player4 = pygame.image.load("imgs/player4j.PNG")
 
 dado_image = pygame.image.load("imgs/player4.PNG")
 
@@ -241,87 +241,83 @@ verde = (100, 200, 100)
 azul = (0, 0, 255)
 amarelo = (255, 255, 0)
 
-jogo = Jogo()
-
-jogo.iniciar()
-
 mouse_click_position = None
 
 dado_pos = (0,0)
 
-# Loop principal
-while True:
-    for evento in pygame.event.get():
-        if evento.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+# # Loop principal
+# while True:
+#     for evento in pygame.event.get():
+#         if evento.type == pygame.QUIT:
+#             pygame.quit()
+#             sys.exit()
         
-        # ---------------------Evento de click no dado---------------
-        if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Botão esquerdo do mouse
-            mouse_click_position = pygame.mouse.get_pos()
+#         # ---------------------Evento de click no dado---------------
+#         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Botão esquerdo do mouse
+#             mouse_click_position = pygame.mouse.get_pos()
 
-            # Se o clique do mouse estiver dentro da área do quadrado do dado
-            if dado_rect.collidepoint(mouse_click_position):
-                if mouse_click_position:
-                    dado_pos = mouse_click_position
-                if jogo.dado == 0 and jogo.jogou == False:
-                    jogo.Dado()
-                    jogo.Imagem_Dado()
-                    for i in jogo.pecas:
-                        if i.jogador == jogo.players[jogo.turno]:
-                            if i.preso == False or jogo.dado == 6:
-                                jogo.jogou = True
-                    print('Debug: dado', jogo.dado)
-                    if jogo.jogou == False:
-                        jogo.proximo_turno()
+#             # Se o clique do mouse estiver dentro da área do quadrado do dado
+#             if dado_rect.collidepoint(mouse_click_position):
+#                 if mouse_click_position:
+#                     dado_pos = mouse_click_position
+#                 if jogo.dado == 0 and jogo.jogou == False:
+#                     jogo.Dado()
+#                     jogo.Imagem_Dado()
+#                     for i in jogo.pecas:
+#                         if i.jogador == jogo.players[jogo.turno]:
+#                             if i.preso == False or jogo.dado == 6:
+#                                 jogo.jogou = True
+#                     print('Debug: dado', jogo.dado)
+#                     if jogo.jogou == False:
+#                         jogo.proximo_turno()
 
 
         #----------------------Evento de click nas pecas----------- 
-        if jogo.jogou == True: #verificar se o player jogou o dado
-            if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
+        # if jogo.jogou == True: #verificar se o player jogou o dado
+        #     if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  
+        #             mouse_x, mouse_y = pygame.mouse.get_pos()
         
-                    # Verifica se o clique ocorreu em uma peça
-                    for peca in jogo.pecas:
-                        peca_x = (unidade_mapa * peca.posicao[0]) + x
-                        peca_y = (unidade_mapa * peca.posicao[1]) + y
+        #             # Verifica se o clique ocorreu em uma peça
+        #             for peca in jogo.pecas:
+        #                 peca_x = (unidade_mapa * peca.posicao[0]) + x
+        #                 peca_y = (unidade_mapa * peca.posicao[1]) + y
 
-                        # Se o clique do mouse estiver dentro da área da peça
-                        if peca_x - 15 <= mouse_x <= peca_x + 15 and peca_y - 15 <= mouse_y <= peca_y + 15:
+        #                 # Se o clique do mouse estiver dentro da área da peça
+        #                 if peca_x - 15 <= mouse_x <= peca_x + 15 and peca_y - 15 <= mouse_y <= peca_y + 15:
 
-                            if jogo.players[jogo.turno] == peca.jogador: #Vez do player
-                                if peca.preso == True and jogo.dado == 6: #liberar peça
-                                    peca.posicao = peca.posicao_inicial
-                                    peca.preso = False
-                                    #sistema de troca de turno
-                                    jogo.proximo_turno()
+        #                     if jogo.players[jogo.turno] == peca.jogador: #Vez do player
+        #                         if peca.preso == True and jogo.dado == 6: #liberar peça
+        #                             peca.posicao = peca.posicao_inicial
+        #                             peca.preso = False
+        #                             #sistema de troca de turno
+        #                             jogo.proximo_turno()
 
-                                elif peca.preso == False:
-                                    peca.Andar(jogo.dado, jogo.pecas)
-                                    #sistema de troca de turno
-                                    jogo.proximo_turno()
+        #                         elif peca.preso == False:
+        #                             peca.Andar(jogo.dado, jogo.pecas)
+        #                             #sistema de troca de turno
+        #                             jogo.proximo_turno()
 
 
-    # Desenha na tela
-    screen.fill(DARK_GRAY)
-    screen.blit(mapa, (50, 50))
+    # # Desenha na tela
+    # screen.fill(DARK_GRAY)
+    # screen.blit(mapa, (50, 50))
 
-    # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
-    if dado_pos != (0, 0):
-        screen.blit(dado_image, dado_pos)
+    # # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
+    # if dado_pos != (0, 0):
+    #     screen.blit(dado_image, dado_pos)
     
 
-    if jogo.ganhou != -1:
-        screen.blit(font.render('Player '+str(jogo.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
-    else:
-        screen.blit(font.render('Player '+str(jogo.turno+1), True, branco), (220, 15))
-    #dado
-    pygame.draw.rect(screen, branco, dado_rect)
-    pygame.draw.rect(screen, preto, dado_rect, 2) 
+    # if jogo.ganhou != -1:
+    #     screen.blit(font.render('Player '+str(jogo.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
+    # else:
+    #     screen.blit(font.render('Player '+str(jogo.turno+1), True, branco), (220, 15))
+    # #dado
+    # pygame.draw.rect(screen, branco, dado_rect)
+    # pygame.draw.rect(screen, preto, dado_rect, 2) 
     
    
 
-    # Desenha as peças
-    jogo.Desenhar()
-    # Atualiza a tela
-    pygame.display.flip()
+    # # Desenha as peças
+    # jogo.Desenhar()
+    # # Atualiza a tela
+    # pygame.display.flip()
