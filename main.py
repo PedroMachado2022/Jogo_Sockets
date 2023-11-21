@@ -64,8 +64,8 @@ Start_r = Start.get_rect(center=((SCREEN_WIDTH // 2), 400))
 
 player1 = pygame.image.load("imgs/player1.png")
 player2 = pygame.image.load("imgs/player2.PNG")
-player3 = pygame.image.load("imgs/player1.PNG")
-player4 = pygame.image.load("imgs/player2.PNG")
+player3 = pygame.image.load("imgs/player3.PNG")
+player4 = pygame.image.load("imgs/player4.PNG")
 
 # Tiulo do jogo
 pygame.display.set_caption("Ludo")
