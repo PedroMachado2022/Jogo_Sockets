@@ -1,6 +1,7 @@
 import socket
 import threading
 import random
+import time
 
 HOST = "127.0.0.1"
 PORT = 65432
@@ -13,6 +14,7 @@ class Sala:
     def __init__(self, master_player):
         self.players = [master_player]
         self.cod_partida = None
+        self.turno = 0
 
     def criar_codigo(self):
         self.cod_partida = random.randint(100000, 999999)
@@ -23,7 +25,12 @@ class Sala:
     def remover_jogador(self, jogador):
         self.players.remove(jogador)
         print('Jogador removido:')
-
+    #pular turno
+    def next_turno(self):
+        if len(self.players) == (self.turno+1):
+            self.turno = 0
+        else:
+            self.turno += 1
     #Enviar mensagem para todos
     def enviar_mensagem_broadcast(self, mensagem, remetente):
         for player in self.players:
@@ -42,7 +49,7 @@ def handle_client(conn, addr):
         while True:
             
             #Estrutura da mensagem Funcao/variaveis/plus
-            client_message = conn.recv(1024).decode().split(" ")
+            client_message = conn.recv(1024).decode().split("/")
 
             if not client_message:
                 break
@@ -62,9 +69,9 @@ def handle_client(conn, addr):
             elif client_message[0] == 'Atualizar':
                 #atualizar dados de sala
                 if sala_associada:
-                    conn.sendall(f'Players {len(sala_associada.players)} {sala_associada.cod_partida}'.encode())
+                    conn.sendall(f'Players/{len(sala_associada.players)}/{sala_associada.cod_partida}'.encode())
                 else:
-                    conn.sendall(f'Players 0'.encode())
+                    conn.sendall(f'Players/0'.encode())
 
 
             elif client_message[0] == 'Find_room':
@@ -75,11 +82,30 @@ def handle_client(conn, addr):
                 if sala_associada:
                     sala_associada.adicionar_jogador(conn)
                     players_na_sala = len(sala_associada.players)
-                    msg = f'Players {players_na_sala} {sala_associada.cod_partida}'
+                    msg = f'Players/{players_na_sala}/{sala_associada.cod_partida}'
                     conn.sendall(msg.encode())
                     
                     sala_associada.enviar_mensagem_broadcast(msg, conn)
                     
+            elif client_message[0] == 'Start_game':
+                print("debug: Enviar mensagem para todos iniciarem")
+                msg = 'Iniciar_jogo/'
+                sala_associada.enviar_mensagem_broadcast(msg, conn)
+                time.sleep(0.1)
+                msg = 'Pode_jogar/'
+                sala_associada.players[sala_associada.turno].sendall(msg.encode())
+                
+            elif client_message[0] == 'Next_turn':
+                print(client_message)
+                sala_associada.next_turno()
+                msg = f'Att_Turno/{sala_associada.turno}'
+                sala_associada.enviar_mensagem_broadcast(msg, None)
+                time.sleep(0.1)
+                msg = f'Pecas/'+client_message[1]
+                sala_associada.enviar_mensagem_broadcast(msg, conn)
+                time.sleep(0.1)
+                msg = 'Pode_jogar/'
+                sala_associada.players[sala_associada.turno].sendall(msg.encode())
 
             elif client_message[0] == ('Leave_room'):
                 print(sala_associada.players)
@@ -89,7 +115,7 @@ def handle_client(conn, addr):
                     if conn in sala_associada.players:
 
                         sala_associada.remover_jogador(conn)
-                        mensagem = f"Player_saiu {sala_associada.cod_partida}"
+                        mensagem = f"Player_saiu/{sala_associada.cod_partida}"
 
                         sala_associada.enviar_mensagem_broadcast(mensagem, conn)
                         #Verifica se tem alguem na sala ainda, se não existe apaga sala.

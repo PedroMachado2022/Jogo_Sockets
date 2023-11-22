@@ -1,5 +1,5 @@
 import pygame
-import sys
+
 import random
 
 # Inicialize o Pygame
@@ -10,7 +10,12 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 unidade_mapa = 33.4
 
 # Variaveis de jogo
-
+jogadores = [
+            {'id': 1, 'cor': 'verde'},
+            {'id': 2, 'cor': 'vermelho'},
+            {'id': 3, 'cor': 'amarelo'},
+            {'id': 4, 'cor': 'azul'}
+            ]
 
 player1 = pygame.image.load("imgs/player1j.png")
 player2 = pygame.image.load("imgs/player2j.PNG")
@@ -129,6 +134,12 @@ class Peca:
         self.posicao = self.posicao_base
         self.preso = True
 
+    def Att(self, nova_pos):
+        if self.posicao[0] != nova_pos[0] or self.posicao[1] != nova_pos[1]:
+            
+            self.posicao = nova_pos
+            print('mudou')
+
 
         
     def Andar(self, dado, pecas):
@@ -153,12 +164,7 @@ class Peca:
 class Jogo:
     def __init__(self):
 
-        self.players = [
-            {'id': 1, 'cor': 'verde'},
-            {'id': 2, 'cor': 'vermelho'},
-            {'id': 3, 'cor': 'amarelo'},
-            {'id': 4, 'cor': 'azul'}
-            ]
+        self.players = None
         
         self.pecas = []
         self.turno = 0
@@ -166,8 +172,9 @@ class Jogo:
         self.jogou = False
         self.ganhou = -1
 
-    def iniciar(self):
-        for i in range(len(self.players)):
+    def iniciar(self, num):
+        self.players = jogadores[0:num]
+        for i in range(num):
             for z in range(0, 4):
                 nova_peca = Peca(self.players[i], peca_player[i][z], pos_incial[i], player1)
                 self.pecas.append(nova_peca)
@@ -177,9 +184,20 @@ class Jogo:
         for i in self.pecas:
             i.Desenhar_peca()
     
+    def atualizar_pecas(self, lista, turno):
+   
+        for i, z in enumerate(lista):
+            self.pecas[i].Att(z)
+        
+        if self.turno != turno:
+            print('chega aqui no turno jogo')
+            
+            self.turno = turno
+        
+
     def Dado(self):
         show_image = None
-        self.dado = 1 #random.randint(, 6)
+        self.dado = 6 #random.randint(, 6)
             
     def Imagem_Dado(self):
         show_image = None
@@ -210,13 +228,14 @@ class Jogo:
 
     def proximo_turno(self):
         self.verificapeca()
-        print("Debug: Next_Turno", self.turno)
+        
         self.jogou = False
         self.dado = 0
         if self.turno == (len(self.players)-1):
             self.turno = 0
         else: 
             self.turno+= 1
+        print("Debug: Next_Turno", self.turno)   
 
         
 

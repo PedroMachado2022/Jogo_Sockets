@@ -3,13 +3,21 @@ import sys
 import servidor.scTCP as tcp
 import threading
 from time import sleep
+from jogo import *
+import json
 pygame.init()
 
 
-from jogo import *
+def voltar_pos_pecas(pecas):
+    posicao = []
+    for i in pecas:
+            posicao.append(i.posicao)
+    return posicao
+
+
 
 #variaveis server
-Conexao_Tcp = tcp.ClienteTCP()
+Conexao_Tcp = tcp.ClienteTCP(0)
 HOST = "127.0.0.1"
 PORT = 65432
 
@@ -81,9 +89,8 @@ Conexao_Tcp.conectar(HOST, PORT)
 
 threading.Thread(target=Conexao_Tcp.receber_mensagens).start()
 
-# Controle de pagina
-page = 0
 
+jogo_objeto = None
 
 running = True
 while running:
@@ -93,47 +100,59 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN :
 
             #Criar Partida
-            if create_rect.collidepoint(event.pos) and page == 0:
-                page = 1
-                Conexao_Tcp.enviar_mensagem("Create_room ")
+            if create_rect.collidepoint(event.pos) and Conexao_Tcp.page == 0:
+                Conexao_Tcp.page = 1
+                Conexao_Tcp.enviar_mensagem("Create_room/")
                 print('Sala Criada')
                 sleep(0.1)
                 Conexao_Tcp.atualizar()
                 
             #sair a pagina
-            elif exit_r.collidepoint(event.pos) and page != 0:
-                if page == 1:
+            elif exit_r.collidepoint(event.pos) and (Conexao_Tcp.page == 1 or Conexao_Tcp.page == 3):
+                if Conexao_Tcp.page == 1:
                     Conexao_Tcp.sair()
-                page = 0
+                Conexao_Tcp.page = 0
+                Conexao_Tcp.page=0
                 print('sair')
 
             #Começar Jogo
-            elif Start_r.collidepoint(event.pos) and page == 1:
+            elif Start_r.collidepoint(event.pos) and Conexao_Tcp.page == 1:
+                Conexao_Tcp.Iniciar_jogo()
                 jogo_objeto = Jogo()
-                jogo_objeto.iniciar()
-                page = 4
-                print(f'Start{page}')
+                jogo_objeto.iniciar(Conexao_Tcp.players)
+                Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                
+                Conexao_Tcp.page = 4
+               
 
             
-            elif find_rect.collidepoint(event.pos) and page == 0:
-                page = 3
+            elif find_rect.collidepoint(event.pos) and Conexao_Tcp.page == 0:
+                Conexao_Tcp.page = 3
                 
     
             #Encontrar Partida
-            elif Start_r.collidepoint(event.pos) and page == 3:
+            elif Start_r.collidepoint(event.pos) and Conexao_Tcp.page == 3:
                 #Buscar sala e limpar variavel
                 Conexao_Tcp.Encontrar_sala(str(user_text))
                 user_text = ''
                 if Conexao_Tcp.sala != None:
-                    page = 0
+                    Conexao_Tcp.page = 0
                 else:
-                    page = 1                    
-            elif page == 4 and event.button == 1:
+                    Conexao_Tcp.page = 1
+
+            #verificar rodada
+
+            #Jogo rodando                                 
+            elif Conexao_Tcp.page == 4 and event.button == 1 and Conexao_Tcp.vez_de_jogar == True:
+
                 mouse_click_position = pygame.mouse.get_pos()
+
                 # Se o clique do mouse estiver dentro da área do quadrado do dado
                 if dado_rect.collidepoint(mouse_click_position):
+
                     if mouse_click_position:
                         dado_pos = mouse_click_position
+
                     if jogo_objeto.dado == 0 and jogo_objeto.jogou == False:
                         jogo_objeto.Dado()
                         jogo_objeto.Imagem_Dado()
@@ -141,9 +160,16 @@ while running:
                             if i.jogador == jogo_objeto.players[jogo_objeto.turno]:
                                 if i.preso == False or jogo_objeto.dado == 6:
                                     jogo_objeto.jogou = True
+
                         print('Debug: dado', jogo_objeto.dado)
                         if jogo_objeto.jogou == False:
                             jogo_objeto.proximo_turno()
+                            print(jogo_objeto.turno)
+                            Conexao_Tcp.vez_de_jogar= False
+                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
+                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
+                           
 
 
                 #----------------------Evento de click nas pecas----------- 
@@ -161,18 +187,27 @@ while running:
 
                                     if jogo_objeto.players[jogo_objeto.turno] == peca.jogador: #Vez do player
                                         if peca.preso == True and jogo_objeto.dado == 6: #liberar peça
+                                            
                                             peca.posicao = peca.posicao_inicial
                                             peca.preso = False
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
+                                            Conexao_Tcp.vez_de_jogar= False
+                                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
+                                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
 
                                         elif peca.preso == False:
                                             peca.Andar(jogo_objeto.dado, jogo_objeto.pecas)
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
+                                            Conexao_Tcp.vez_de_jogar= False
+                                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
+                                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
 
         #Escrever em pagina de busca
-        elif event.type == pygame.KEYDOWN and page == 3:
+        elif event.type == pygame.KEYDOWN and Conexao_Tcp.page == 3:
             if event.key == pygame.K_RETURN:
                 print(user_text)  
                 user_text = ""    
@@ -182,10 +217,10 @@ while running:
                 user_text += event.unicode
         
         # Funções de jogo
-
+    
         
 
-    if page == 0:
+    if Conexao_Tcp.page == 0:
         # Desenhar a imagem de fundo
         screen.blit(background, (0, 0))
 
@@ -193,7 +228,7 @@ while running:
         screen.blit(create_button, create_rect)
         screen.blit(find_button, find_rect)
 
-    elif page == 1:
+    elif Conexao_Tcp.page == 1:
         screen.blit(background, (0, 0))
         screen.blit(center_square, (100, 100))
         screen.blit(Number_room, Number_room_r)
@@ -206,7 +241,7 @@ while running:
             screen.blit(pygame.image.load("imgs/player"+str(i)+".png"), (const, 250))
             const += 100
 
-    elif page == 3:
+    elif Conexao_Tcp.page == 3:
         screen.blit(background, (0, 0))
         screen.blit(center_square, (100, 100))
         screen.blit(font.render("Encontre", True, BLACK), (SCREEN_WIDTH // 2-100, 110))
@@ -219,11 +254,17 @@ while running:
         screen.blit(exit, exit_r)
         screen.blit(font.render("Find", True, BLACK), Start_r)
     
-    elif page == 4:
+    elif Conexao_Tcp.page == 4:
+        if jogo_objeto == None:
+            jogo_objeto = Jogo()
+            jogo_objeto.iniciar(Conexao_Tcp.players)
+            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+
         screen.fill(DARK_GRAY)
         screen.blit(mapa, (50, 50))
         
-
+        jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
+        
         # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
         if dado_pos != (0, 0):
             screen.blit(dado_image, dado_pos)
@@ -241,7 +282,7 @@ while running:
         # Desenha as peças
         jogo_objeto.Desenhar()
         # Atualiza a tela
-
+    
     pygame.display.flip()
 
 pygame.quit()
