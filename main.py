@@ -26,11 +26,17 @@ PORT = 65432
 user_text = ''
 
 # Cores
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BLACK_transparent = (50, 50, 150, 200)
+preto = (0,0,0)
 DARK_GRAY = (30, 30, 50)
+branco = (255, 255, 255)
+vermelho = (255, 0, 0)
+verde = (100, 200, 100)
+azul = (0, 0, 255)
+amarelo = (255, 255, 0)
 
+
+# Cor do texto
+cor_texto = branco
 
 # Tamanho da janela
 SCREEN_WIDTH = 800
@@ -38,6 +44,7 @@ SCREEN_HEIGHT = 600
 
 # Fonte
 font = pygame.font.Font('./font/04b.ttf', 28)
+font2 = pygame.font.Font('./font/04b.TTF', 16)
 
 # Criar a janela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -156,6 +163,7 @@ while running:
                     if jogo_objeto.dado == 0 and jogo_objeto.jogou == False:
                         jogo_objeto.Dado()
                         jogo_objeto.Imagem_Dado()
+                        imagem_dado = jogo_objeto.Imagem_Dado()
                         for i in jogo_objeto.pecas:
                             if i.jogador == jogo_objeto.players[jogo_objeto.turno]:
                                 if i.preso == False or jogo_objeto.dado == 6:
@@ -277,18 +285,36 @@ while running:
             jogo_objeto.pecas[Conexao_Tcp.andar[0]].Andar(Conexao_Tcp.andar[1], jogo_objeto.pecas)
             jogo_objeto.verificapeca()
             Conexao_Tcp.andar = []
-        # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
-        if dado_pos != (0, 0):
-            pass
-            #screen.blit(dado_image, dado_pos)
         
+        
+        # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
+        if haha:
+            print("HAH AHHA AHHA AHAH AH AHAHAHAHAH")
+            screen.blit(imagem_dado, (SCREEN_WIDTH - dado_size - 100, SCREEN_HEIGHT // 2 - dado_size))
+       
+
         if jogo_objeto.ganhou != -1:
             screen.blit(font.render('Player '+str(jogo_objeto.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
         else:
-            screen.blit(font.render('Player '+str(jogo_objeto.turno+1), True, branco), (220, 15))
+            jogador_atual = jogo_objeto.players[jogo_objeto.turno]
+            jogador_cor = jogador_atual['cor']
+            cor_texto = branco  
+
+        # Ajuste das cores conforme a cor do jogador
+        if jogador_cor == 'verde':
+            cor_texto = verde
+        elif jogador_cor == 'vermelho':
+            cor_texto = vermelho
+        elif jogador_cor == 'amarelo':
+            cor_texto = amarelo
+        elif jogador_cor == 'azul':
+            cor_texto = azul
+        screen.blit(font.render('Player '+str(jogo_objeto.turno+1), True, cor_texto), (220, 15))
+    
         #dado
-        pygame.draw.rect(screen, branco, dado_rect)
-        pygame.draw.rect(screen, preto, dado_rect, 2) 
+        #pygame.draw.rect(screen, preto, dado_rect, 2) 
+        screen.blit(font2.render(f'JOGAR', True, cor_texto), (SCREEN_WIDTH - dado_size - 60, SCREEN_HEIGHT // 2 - dado_size // 2))
+   
         
     
 
