@@ -2,12 +2,15 @@ import pygame
 
 import random
 
-# Inicialize o Pygame
-pygame.init()
 
 # Defina as dimensões da janela
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 unidade_mapa = 33.4
+
+jogadores = [{'id': 1, 'cor': 'verde'},
+             {'id': 2, 'cor': 'vermelho'},
+             {'id': 3, 'cor': 'amarelo'},
+             {'id': 4, 'cor': 'azul'}]
 
 # Variaveis de jogo
 
@@ -26,8 +29,8 @@ dado_6 = pygame.image.load("imgs/dado_6.png")
 
 start_button = pygame.image.load("imgs/start.png")
 
-font = pygame.font.Font('./font/04b.ttf', 28)
-font2 = pygame.font.Font('./font/04b.ttf', 16)
+
+#font2 = pygame.font.Font('./font/04b.TTF', 16)
 x = 67
 y = 67
 matriz_jogo = [
@@ -110,7 +113,7 @@ class Peca:
         self.contador_geral = 0
         self.posicao_inicial = posicao_inicial
         self.imagem = imagem
-    
+        
     def Desenhar_peca(self):
     # Desenha as peças de cada jogador
         jogador_cor = self.jogador['cor']
@@ -186,10 +189,11 @@ class Jogo:
         for i in self.pecas:
             i.Desenhar_peca()
     
-    def atualizar_pecas(self, lista, turno):
-   
-        for i, z in enumerate(lista):
-            self.pecas[i].Att(z)
+    def sair_peca(self, peca):
+        self.pecas[peca].posicao = self.pecas[peca].posicao_inicial
+        self.pecas[peca].preso = False
+
+    def Atualiza_turno(self,turno):
         
         if self.turno != turno:
             print('chega aqui no turno jogo')
@@ -199,7 +203,7 @@ class Jogo:
 
     def Dado(self):
         show_image = None
-        self.dado = 1 #random.randint(, 6)
+        self.dado = 6 #random.randint(, 6)
             
     def Imagem_Dado(self):
         if self.dado == 1:

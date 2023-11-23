@@ -101,7 +101,10 @@ def handle_client(conn, addr):
                 msg = f'Att_Turno/{sala_associada.turno}'
                 sala_associada.enviar_mensagem_broadcast(msg, None)
                 time.sleep(0.1)
-                msg = f'Pecas/'+client_message[1]
+                if client_message[1] == 'Sair':
+                    msg = client_message[1]+'/'+client_message[2]
+                elif client_message[1] == 'Andar':
+                    msg = client_message[1]+'/'+client_message[2]+'/'+client_message[3]
                 sala_associada.enviar_mensagem_broadcast(msg, conn)
                 time.sleep(0.1)
                 msg = 'Pode_jogar/'

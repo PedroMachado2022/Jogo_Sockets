@@ -8,7 +8,8 @@ class ClienteTCP:
         self.players = 1
         self.page = page
         self.pecas = []
-        self.novas_peca = []
+        self.sair_base = -1
+        self.andar = []
         self.turno = 0
         self.vez_de_jogar = False
         
@@ -42,12 +43,12 @@ class ClienteTCP:
 
     
 
-    def proximo_turno(self, pecas):
+    def proximo_turno(self,txt, cont, dado=0):
         posicao = []
-        for i in pecas:
-            posicao.append(i.posicao)
-        self.pecas = posicao
-        self.enviar_mensagem(f'Next_turn/{posicao}')
+        # for i in pecas:
+        #     posicao.append(i.posicao)
+        # self.pecas = posicao
+        self.enviar_mensagem(f'Next_turn/{txt}/{cont}/{dado}')
         
 
     def Encontrar_sala(self, sala):
@@ -88,7 +89,10 @@ class ClienteTCP:
                     self.turno = int(mensagem[1])
                     print("degug turno", self.turno)
 
-                elif mensagem[0] == 'Pecas':
-                    
-                    self.pecas = json.loads(mensagem[1])
-                    print(type(self.pecas[0][0]))
+                elif mensagem[0] == 'Andar':
+                    self.andar.append(int(mensagem[1]))
+                    self.andar.append(int(mensagem[2]))
+                    print('debug: Andou peca')
+                elif mensagem[0] == 'Sair':
+                    self.sair_base = int(mensagem[1])
+                    print('debug: Saiu peca')

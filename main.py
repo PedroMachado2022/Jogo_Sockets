@@ -166,8 +166,8 @@ while running:
                             jogo_objeto.proximo_turno()
                             print(jogo_objeto.turno)
                             Conexao_Tcp.vez_de_jogar= False
-                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
-                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                            Conexao_Tcp.proximo_turno('Nada')
+                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
                             #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
                            
 
@@ -178,7 +178,9 @@ while running:
                             mouse_x, mouse_y = pygame.mouse.get_pos()
                 
                             # Verifica se o clique ocorreu em uma peça
+                            cont = 0
                             for peca in jogo_objeto.pecas:
+                                cont +=1
                                 peca_x = (unidade_mapa * peca.posicao[0]) + x
                                 peca_y = (unidade_mapa * peca.posicao[1]) + y
 
@@ -186,24 +188,26 @@ while running:
                                 if peca_x - 15 <= mouse_x <= peca_x + 15 and peca_y - 15 <= mouse_y <= peca_y + 15:
 
                                     if jogo_objeto.players[jogo_objeto.turno] == peca.jogador: #Vez do player
+                                        cont -= 1
                                         if peca.preso == True and jogo_objeto.dado == 6: #liberar peça
-                                            
+                                            Conexao_Tcp.proximo_turno('Sair', cont)
                                             peca.posicao = peca.posicao_inicial
                                             peca.preso = False
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
                                             Conexao_Tcp.vez_de_jogar= False
-                                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
-                                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                                            #Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
+                                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
                                             #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
 
                                         elif peca.preso == False:
+                                            Conexao_Tcp.proximo_turno('Andar', cont, jogo_objeto.dado)
                                             peca.Andar(jogo_objeto.dado, jogo_objeto.pecas)
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
                                             Conexao_Tcp.vez_de_jogar= False
-                                            Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
-                                            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
+                                            #Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
+                                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
                                             #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
 
         #Escrever em pagina de busca
@@ -262,12 +266,21 @@ while running:
 
         screen.fill(DARK_GRAY)
         screen.blit(mapa, (50, 50))
-        
-        jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
-        
+        jogo_objeto.Atualiza_turno(Conexao_Tcp.turno)
+
+        if Conexao_Tcp.sair_base != -1:
+            print('Saiu?')
+            jogo_objeto.sair_peca(Conexao_Tcp.sair_base )
+            Conexao_Tcp.sair_base = -1
+        if Conexao_Tcp.andar:
+            print('andou?', Conexao_Tcp.andar, jogo_objeto.pecas[Conexao_Tcp.andar[0]])
+            jogo_objeto.pecas[Conexao_Tcp.andar[0]].Andar(Conexao_Tcp.andar[1], jogo_objeto.pecas)
+            jogo_objeto.verificapeca()
+            Conexao_Tcp.andar = []
         # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
         if dado_pos != (0, 0):
-            screen.blit(dado_image, dado_pos)
+            pass
+            #screen.blit(dado_image, dado_pos)
         
         if jogo_objeto.ganhou != -1:
             screen.blit(font.render('Player '+str(jogo_objeto.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
