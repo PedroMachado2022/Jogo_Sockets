@@ -1,19 +1,16 @@
+'''
+
+'''
+
 import pygame
 import sys
 import servidor.scTCP as tcp
 import threading
 from time import sleep
 from jogo import *
-import json
+
+
 pygame.init()
-
-
-def voltar_pos_pecas(pecas):
-    posicao = []
-    for i in pecas:
-            posicao.append(i.posicao)
-    return posicao
-
 
 
 #variaveis server
@@ -21,8 +18,7 @@ Conexao_Tcp = tcp.ClienteTCP(0)
 HOST = "127.0.0.1"
 PORT = 65432
 
-#variavel de Input
-
+#variavel de Input --> (Buscar partida)
 user_text = ''
 
 # Cores
@@ -63,19 +59,19 @@ find_rect = find_button.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 +
 # Quadrado central 
 
 center_square = pygame.Surface((600, 400), pygame.SRCALPHA)
-center_square.fill(BLACK_transparent)
+center_square.fill(DARK_GRAY)
 
 #texto do numero da sala
 
-Number_room = font.render("Codigo sala:", True, BLACK)
+Number_room = font.render("Codigo sala:", True, preto)
 Number_room_r = Number_room.get_rect(center=(SCREEN_WIDTH // 2, 120))
 
 #texto de volta
-exit = font.render("Sair", True, BLACK)
+exit = font.render("Sair", True, preto)
 exit_r = exit.get_rect(center=((SCREEN_WIDTH // 2)-220, 120))
 
 #texto de start
-Start = font.render("Start", True, BLACK)
+Start = font.render("Start", True, preto)
 Start_r = Start.get_rect(center=((SCREEN_WIDTH // 2), 400))
 
 # pecas grafica
@@ -92,8 +88,7 @@ pygame.display.set_caption("Ludo")
 
 Conexao_Tcp.conectar(HOST, PORT)
 
-# iniciar escuta de servidor 
-
+# Thread com objetivo de ficar escutando mensagens do servidor
 threading.Thread(target=Conexao_Tcp.receber_mensagens).start()
 
 
@@ -126,9 +121,7 @@ while running:
             elif Start_r.collidepoint(event.pos) and Conexao_Tcp.page == 1:
                 Conexao_Tcp.Iniciar_jogo()
                 jogo_objeto = Jogo()
-                jogo_objeto.iniciar(Conexao_Tcp.players)
-                Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
-                
+                jogo_objeto.iniciar(Conexao_Tcp.players)            
                 Conexao_Tcp.page = 4
                
 
@@ -156,7 +149,7 @@ while running:
 
                 # Se o clique do mouse estiver dentro da área do quadrado do dado
                 if dado_rect.collidepoint(mouse_click_position):
-
+                    
                     if mouse_click_position:
                         dado_pos = mouse_click_position
 
@@ -164,6 +157,8 @@ while running:
                         jogo_objeto.Dado()
                         jogo_objeto.Imagem_Dado()
                         imagem_dado = jogo_objeto.Imagem_Dado()
+                        
+                        
                         for i in jogo_objeto.pecas:
                             if i.jogador == jogo_objeto.players[jogo_objeto.turno]:
                                 if i.preso == False or jogo_objeto.dado == 6:
@@ -175,9 +170,6 @@ while running:
                             print(jogo_objeto.turno)
                             Conexao_Tcp.vez_de_jogar= False
                             Conexao_Tcp.proximo_turno('Nada')
-                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
-                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
-                           
 
 
                 #----------------------Evento de click nas pecas----------- 
@@ -204,9 +196,7 @@ while running:
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
                                             Conexao_Tcp.vez_de_jogar= False
-                                            #Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
-                                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
-                                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
+
 
                                         elif peca.preso == False:
                                             Conexao_Tcp.proximo_turno('Andar', cont, jogo_objeto.dado)
@@ -214,9 +204,7 @@ while running:
                                             #sistema de troca de turno
                                             jogo_objeto.proximo_turno()
                                             Conexao_Tcp.vez_de_jogar= False
-                                            #Conexao_Tcp.proximo_turno(jogo_objeto.pecas)
-                                            #Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
-                                            #jogo_objeto.atualizar_pecas(Conexao_Tcp.pecas, Conexao_Tcp.turno)
+
 
         #Escrever em pagina de busca
         elif event.type == pygame.KEYDOWN and Conexao_Tcp.page == 3:
@@ -231,20 +219,18 @@ while running:
         # Funções de jogo
     
         
-
+    # Pagina principal do jogo
     if Conexao_Tcp.page == 0:
-        # Desenhar a imagem de fundo
         screen.blit(background, (0, 0))
-
-        # Desenhar botões
         screen.blit(create_button, create_rect)
         screen.blit(find_button, find_rect)
 
+    # Pagina de criaçao de partida
     elif Conexao_Tcp.page == 1:
         screen.blit(background, (0, 0))
         screen.blit(center_square, (100, 100))
         screen.blit(Number_room, Number_room_r)
-        screen.blit(font.render(str(Conexao_Tcp.sala), True, BLACK), ((350, 140)))
+        screen.blit(font.render(str(Conexao_Tcp.sala), True, preto), ((350, 140)))
         screen.blit(exit, exit_r)
         screen.blit(Start, Start_r)
 
@@ -253,46 +239,49 @@ while running:
             screen.blit(pygame.image.load("imgs/player"+str(i)+".png"), (const, 250))
             const += 100
 
+    # Pagina para achar partida
     elif Conexao_Tcp.page == 3:
+
         screen.blit(background, (0, 0))
         screen.blit(center_square, (100, 100))
-        screen.blit(font.render("Encontre", True, BLACK), (SCREEN_WIDTH // 2-100, 110))
+        screen.blit(font.render("Encontre", True, preto), (SCREEN_WIDTH // 2-100, 110))
 
         if not user_text:
-            screen.blit(font.render('Digite um Numero!', True, BLACK), (220, 280))
+            screen.blit(font.render('Digite um Numero!', True, preto), (220, 280))
 
-        screen.blit(font.render(user_text, True, BLACK), (390-(len(user_text)*13), 280))
+        screen.blit(font.render(user_text, True, preto), (390-(len(user_text)*13), 280))
 
         screen.blit(exit, exit_r)
-        screen.blit(font.render("Find", True, BLACK), Start_r)
+        screen.blit(font.render("Find", True, preto), Start_r)
     
+    # Pagina quando começa o jogo
     elif Conexao_Tcp.page == 4:
+
+        # Se não é o player que iniciou, inicia objeto do jogo.
         if jogo_objeto == None:
             jogo_objeto = Jogo()
             jogo_objeto.iniciar(Conexao_Tcp.players)
-            Conexao_Tcp.pecas = voltar_pos_pecas(jogo_objeto.pecas)
 
         screen.fill(DARK_GRAY)
         screen.blit(mapa, (50, 50))
         jogo_objeto.Atualiza_turno(Conexao_Tcp.turno)
 
+        # Atulizar jogo com informações do turno de outros players
         if Conexao_Tcp.sair_base != -1:
-            print('Saiu?')
             jogo_objeto.sair_peca(Conexao_Tcp.sair_base )
             Conexao_Tcp.sair_base = -1
+
         if Conexao_Tcp.andar:
-            print('andou?', Conexao_Tcp.andar, jogo_objeto.pecas[Conexao_Tcp.andar[0]])
             jogo_objeto.pecas[Conexao_Tcp.andar[0]].Andar(Conexao_Tcp.andar[1], jogo_objeto.pecas)
             jogo_objeto.verificapeca()
             Conexao_Tcp.andar = []
-        
+        #---------------------------------------------------------
         
         # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
-        if haha:
-            print("HAH AHHA AHHA AHAH AH AHAHAHAHAH")
+        if jogo_objeto.dado != 0:
             screen.blit(imagem_dado, (SCREEN_WIDTH - dado_size - 100, SCREEN_HEIGHT // 2 - dado_size))
        
-
+        # Mostrar na tela o player ganhador
         if jogo_objeto.ganhou != -1:
             screen.blit(font.render('Player '+str(jogo_objeto.ganhou['id'])+' VENCEU!', True, branco), (180, 15))
         else:
@@ -311,13 +300,9 @@ while running:
             cor_texto = azul
         screen.blit(font.render('Player '+str(jogo_objeto.turno+1), True, cor_texto), (220, 15))
     
-        #dado
         #pygame.draw.rect(screen, preto, dado_rect, 2) 
         screen.blit(font2.render(f'JOGAR', True, cor_texto), (SCREEN_WIDTH - dado_size - 60, SCREEN_HEIGHT // 2 - dado_size // 2))
-   
-        
-    
-
+     
         # Desenha as peças
         jogo_objeto.Desenhar()
         # Atualiza a tela
