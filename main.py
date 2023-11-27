@@ -1,37 +1,43 @@
 '''
+Script responsavel por gerenciar todo o jogo entre a comunicação com servidor, criação de salas e funções de jogo.
 
 '''
 
+#--------Imports--------
 import pygame
 import sys
 import servidor.scTCP as tcp
 import threading
 from time import sleep
 from jogo import *
+#-----------------------
+
+pygame.init() # Inicializar pygame
 
 
-pygame.init()
+#-----variaveis server-----
 
-
-#variaveis server
-Conexao_Tcp = tcp.ClienteTCP(0)
+Conexao_Tcp = tcp.ClienteTCP(0) # Toda a comunicação criada na classe ClienteTCP
 HOST = "127.0.0.1"
 PORT = 65432
 
-#variavel de Input --> (Buscar partida)
+
+#--variavel de Input --> (Buscar partida, escrita em chat)--
 user_text = ''
 
 # Cores
 preto = (0,0,0)
+preto_chat = (30,30,70, 200)
 DARK_GRAY = (30, 30, 50)
 branco = (255, 255, 255)
+branco_chat = (150, 150, 150, 100)
 vermelho = (255, 0, 0)
 verde = (100, 200, 100)
 azul = (0, 0, 255)
 amarelo = (255, 255, 0)
 
 
-# Cor do texto
+# Cor do texto no jogo
 cor_texto = branco
 
 # Tamanho da janela
@@ -41,11 +47,12 @@ SCREEN_HEIGHT = 600
 # Fonte
 font = pygame.font.Font('./font/04b.ttf', 28)
 font2 = pygame.font.Font('./font/04b.TTF', 16)
+font3 = pygame.font.Font('./font/Roboto-Regular.ttf', 13)
 
 # Criar a janela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# Carregar a imagem de fundo
+# Carregar a imagem de fundo tela principal
 background = pygame.image.load("imgs/BACKGROUND.PNG")
 
 # Criar Botão
@@ -62,7 +69,6 @@ center_square = pygame.Surface((600, 400), pygame.SRCALPHA)
 center_square.fill(DARK_GRAY)
 
 #texto do numero da sala
-
 Number_room = font.render("Codigo sala:", True, preto)
 Number_room_r = Number_room.get_rect(center=(SCREEN_WIDTH // 2, 120))
 
@@ -75,17 +81,20 @@ Start = font.render("Start", True, preto)
 Start_r = Start.get_rect(center=((SCREEN_WIDTH // 2), 400))
 
 # pecas grafica
-
 player1 = pygame.image.load("imgs/player1.png")
 player2 = pygame.image.load("imgs/player2.PNG")
 player3 = pygame.image.load("imgs/player3.PNG")
 player4 = pygame.image.load("imgs/player4.PNG")
 
+#Chat jogo
+pode_digitar = False
+chat_rect = pygame.Rect(SCREEN_WIDTH - 240, 50, 230, 250)
+chat_text_rect = pygame.Rect(SCREEN_WIDTH - 240, 270, 230, 30)
+
 # Tiulo do jogo
 pygame.display.set_caption("Ludo")
 
-#inicar servidor
-
+#inicar conexao com servidor
 Conexao_Tcp.conectar(HOST, PORT)
 
 # Thread com objetivo de ficar escutando mensagens do servidor
@@ -108,8 +117,8 @@ while running:
                 print('Sala Criada')
                 sleep(0.1)
                 Conexao_Tcp.atualizar()
-                
-            #sair a pagina
+
+            #sair da sala 
             elif exit_r.collidepoint(event.pos) and (Conexao_Tcp.page == 1 or Conexao_Tcp.page == 3):
                 if Conexao_Tcp.page == 1:
                     Conexao_Tcp.sair()
@@ -125,7 +134,7 @@ while running:
                 Conexao_Tcp.page = 4
                
 
-            
+            #Selecionar pagina de busca de salas
             elif find_rect.collidepoint(event.pos) and Conexao_Tcp.page == 0:
                 Conexao_Tcp.page = 3
                 
@@ -139,8 +148,6 @@ while running:
                     Conexao_Tcp.page = 0
                 else:
                     Conexao_Tcp.page = 1
-
-            #verificar rodada
 
             #Jogo rodando                                 
             elif Conexao_Tcp.page == 4 and event.button == 1 and Conexao_Tcp.vez_de_jogar == True:
@@ -215,7 +222,26 @@ while running:
                 user_text = user_text[:-1]  
             elif event.unicode.isnumeric():  
                 user_text += event.unicode
-        
+
+        # Escrever no chat do jogo
+        elif event.type == pygame.KEYDOWN and Conexao_Tcp.page == 4:
+            if event.key == pygame.K_RETURN:
+                
+                if len(user_text) > 0:  # Certifique-se de que há algo para enviar
+                    Conexao_Tcp.Enviar_msg_chat(user_text)
+                    user_text = ""
+                    pode_digitar = False
+                else:
+                    if pode_digitar == True:
+                        pode_digitar = False
+                    else:
+                        pode_digitar = True
+                    
+            if pode_digitar and event.key != pygame.K_RETURN:
+                if event.key == pygame.K_BACKSPACE:
+                    user_text = user_text[:-1]
+                elif event.unicode and len(user_text) < 30:
+                    user_text += event.unicode
         # Funções de jogo
     
         
@@ -277,9 +303,21 @@ while running:
             Conexao_Tcp.andar = []
         #---------------------------------------------------------
         
+        # Desenhar chat do jogo
+        pygame.draw.rect(screen, preto_chat, chat_rect)
+
+        #liberar chat com tecla Enter
+        if pode_digitar:
+            pygame.draw.rect(screen, branco_chat, chat_text_rect)
+            screen.blit(font3.render(user_text, True, preto), (SCREEN_WIDTH - 230, 273))
+        # Carregar mensagens na tela
+        for i, message in enumerate(Conexao_Tcp.mensagens):
+            message_surface = font3.render(message, True, branco)
+            screen.blit(message_surface, (SCREEN_WIDTH - 230, 70 + i * 20))
+
         # Desenha a imagem resposta do dado quando a posição do click for diferente de (0,0)
         if jogo_objeto.dado != 0:
-            screen.blit(imagem_dado, (SCREEN_WIDTH - dado_size - 100, SCREEN_HEIGHT // 2 - dado_size))
+            screen.blit(imagem_dado, (SCREEN_WIDTH - dado_size - 100, SCREEN_HEIGHT // 1.7 - dado_size))
        
         # Mostrar na tela o player ganhador
         if jogo_objeto.ganhou != -1:
@@ -301,7 +339,7 @@ while running:
         screen.blit(font.render('Player '+str(jogo_objeto.turno+1), True, cor_texto), (220, 15))
     
         #pygame.draw.rect(screen, preto, dado_rect, 2) 
-        screen.blit(font2.render(f'JOGAR', True, cor_texto), (SCREEN_WIDTH - dado_size - 60, SCREEN_HEIGHT // 2 - dado_size // 2))
+        screen.blit(font2.render(f'JOGAR', True, cor_texto), (SCREEN_WIDTH - dado_size - 60, SCREEN_HEIGHT // 1.7 - dado_size // 2))
      
         # Desenha as peças
         jogo_objeto.Desenhar()

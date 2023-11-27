@@ -1,3 +1,7 @@
+'''
+Script responsavel pela comunicação com o servidor, Enviar mensagem, receber msg e tratar msg
+'''
+
 import socket
 
 # Objeto com intuito de fazer a comunicaçao com o servidor
@@ -12,6 +16,7 @@ class ClienteTCP:
         self.andar = []
         self.turno = 0
         self.vez_de_jogar = False
+        self.mensagens = ['Digite textos']
     
     # Estabelece a comunicação com o servidor
     def conectar(self, host, port):
@@ -19,8 +24,17 @@ class ClienteTCP:
 
     # Função padrão para envio de mensagens para servidor
     def enviar_mensagem(self, msg):
+        print(msg)
         try:
             self.sock.sendall(msg.encode())
+        except Exception as e:
+            print(f"Erro ao enviar mensagem: {e}")
+
+    # Funçao pra enviar mensagem 
+    def Enviar_msg_chat(self, msg):
+        
+        try:
+            self.sock.sendall(f'Chat/{msg}'.encode())
         except Exception as e:
             print(f"Erro ao enviar mensagem: {e}")
 
@@ -47,6 +61,7 @@ class ClienteTCP:
     def Encontrar_sala(self, sala):
         message = 'Find_room/' + sala
         self.enviar_mensagem(message)
+
 
     def Iniciar_jogo(self):
         message = 'Start_game/'
@@ -87,6 +102,10 @@ class ClienteTCP:
                     self.andar.append(int(mensagem[2]))
                     print('debug: Andou peca')
 
+                elif mensagem[0] == "Chat":
+                    if len(self.mensagens) > 9:
+                        self.mensagens.pop(0)
+                    self.mensagens.append(mensagem[1])
                 elif mensagem[0] == 'Sair':
                     self.sair_base = int(mensagem[1])
                     print('debug: Saiu peca')

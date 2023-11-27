@@ -1,3 +1,7 @@
+'''
+Script Responsavel pelo servidor, Aqui receber mensagens e trata de como enviar de volta para os clients
+'''
+
 import socket
 import threading
 import random
@@ -16,21 +20,26 @@ class Sala:
         self.cod_partida = None
         self.turno = 0
 
+    # Criar codigo de sala exemplo: 212341
     def criar_codigo(self):
         self.cod_partida = random.randint(100000, 999999)
 
+    # Adcionar jogador na sala
     def adicionar_jogador(self, jogador):
         self.players.append(jogador)
 
+    #Remver jogador na sala
     def remover_jogador(self, jogador):
         self.players.remove(jogador)
         print('Jogador removido:')
+
     #pular turno
     def next_turno(self):
         if len(self.players) == (self.turno+1):
             self.turno = 0
         else:
             self.turno += 1
+
     #Enviar mensagem para todos
     def enviar_mensagem_broadcast(self, mensagem, remetente):
         for player in self.players:
@@ -48,7 +57,7 @@ def handle_client(conn, addr):
     try:
         while True:
             
-            #Estrutura da mensagem Funcao/variaveis/plus
+            #Estrutura da mensagem de comunicaçao Funcao/variaveis/plus
             client_message = conn.recv(1024).decode().split("/")
 
             if not client_message:
@@ -65,14 +74,12 @@ def handle_client(conn, addr):
                 #Controle para saber se sala existe.
                 salas.append(sala_associada)
 
-
             elif client_message[0] == 'Atualizar':
                 #atualizar dados de sala
                 if sala_associada:
                     conn.sendall(f'Players/{len(sala_associada.players)}/{sala_associada.cod_partida}'.encode())
                 else:
                     conn.sendall(f'Players/0'.encode())
-
 
             elif client_message[0] == 'Find_room':
                 
@@ -127,6 +134,10 @@ def handle_client(conn, addr):
                             salas.remove(sala_associada)
                             sala_associada = None
 
+            elif client_message[0] == ('Chat'):
+                pla = sala_associada.players.index(conn)
+                mensagem = f"Chat/p{pla+1}: {client_message[1]}"
+                sala_associada.enviar_mensagem_broadcast(mensagem, None)
 
 
     except Exception as e:
