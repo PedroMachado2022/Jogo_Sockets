@@ -6,7 +6,7 @@ Script responsavel por gerenciar todo o jogo entre a comunicação com servidor,
 #--------Imports--------
 import pygame
 import sys
-import servidor.scTCP as tcp
+import servidor.ClientTCP as tcp
 import threading
 from time import sleep
 from jogo import *
